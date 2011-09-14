@@ -34,8 +34,40 @@ void TestCbuffer_set_size_with_init(
     cbuf_t *cb;
 
     cb = cbuf_new(16);
-
     CuAssertTrue(tc, 1UL << 16 == cbuf_get_size(cb));
+}
+
+void TestCbuffer_is_empty_after_init(
+    CuTest * tc
+)
+{
+    cbuf_t *cb;
+
+    cb = cbuf_new(16);
+    CuAssertTrue(tc, cbuf_is_empty(cb));
+}
+
+void TestCbuffer_is_not_empty_after_offer(
+    CuTest * tc
+)
+{
+    cbuf_t *cb;
+
+    cb = cbuf_new(16);
+    cbuf_offer(cb, "abcd", 4);
+    CuAssertTrue(tc, !cbuf_is_empty(cb));
+}
+
+void TestCbuffer_is_empty_after_poll_release(
+    CuTest * tc
+)
+{
+    cbuf_t *cb;
+
+    cb = cbuf_new(16);
+    cbuf_offer(cb, "abcd", 4);
+    cbuf_poll_release(cb, 4);
+    CuAssertTrue(tc, cbuf_is_empty(cb));
 }
 
 void TxestCbuffer_cant_offer_if_full(

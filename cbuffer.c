@@ -163,6 +163,13 @@ void cbuf_poll_release(
     cb->start += size;
 }
 
+int cbuf_is_empty(
+    cbuf_t * cb
+)
+{
+    return cb->start == cb->end;
+}
+
 int cbuf_get_size(
     cbuf_t * cb
 )
