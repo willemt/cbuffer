@@ -12,7 +12,7 @@ cbuf_t *cbuf_new(
 
 int cbuf_offer(
     cbuf_t * cb,
-    unsigned char *data,
+    const unsigned char *data,
     int size
 );
 
@@ -20,7 +20,7 @@ int cbuf_get_unused_size(
     cbuf_t * cb
 );
 
-unsigned char *cbuf_poll(
+void *cbuf_poll(
     cbuf_t * cb,
     const int size
 );

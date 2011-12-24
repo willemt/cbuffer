@@ -121,7 +121,7 @@ void cbuf_free(
  * */
 int cbuf_offer(
     cbuf_t * cb,
-    unsigned char *data,
+    const unsigned char *data,
     int size
 )
 {
@@ -141,7 +141,7 @@ int cbuf_offer(
  *
  * @return pointer to data, null if we can't poll this much data
  * */
-unsigned char *cbuf_poll(
+void *cbuf_poll(
     cbuf_t * cb,
     const int size
 )
