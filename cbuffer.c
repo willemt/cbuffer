@@ -37,9 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define fail() assert(0)
 
 
-int cbuf_get_unused_size(
-    cbuf_t * cb
-)
+int cbuf_get_unused_size(const cbuf_t * cb)
 {
     if (cb->end < cb->start)
     {
@@ -51,9 +49,10 @@ int cbuf_get_unused_size(
     }
 }
 
-cbuf_t *cbuf_new(
-    const unsigned int order
-)
+/**
+ * creat new circular buffer.
+ * @param order to the power of two equals size*/
+cbuf_t *cbuf_new(const unsigned int order)
 {
     cbuf_t *cb;
 
@@ -108,22 +107,21 @@ cbuf_t *cbuf_new(
     return cb;
 }
 
-void cbuf_free(
-    cbuf_t * cb
-)
+void cbuf_free(cbuf_t * cb)
 {
     munmap(cb->data, cb->size << 1);
     free(cb);
 }
 
+int cbuf_is_empty(const cbuf_t * cb)
+{
+    return cb->start == cb->end;
+}
+
 /**
  * @return number of bytes offered
  * */
-int cbuf_offer(
-    cbuf_t * cb,
-    unsigned char *data,
-    int size
-)
+int cbuf_offer(cbuf_t * cb, const unsigned char *data, const int size)
 {
     int written;
 
@@ -135,44 +133,41 @@ int cbuf_offer(
     return written;
 }
 
-/** 
- * Get pointer to data to read.
- * Don't move any cursors.
- *
- * @return pointer to data, null if we can't poll this much data
- * */
-unsigned char *cbuf_poll(
-    cbuf_t * cb,
-    const int size
-)
+/**
+ * Look at data.
+ * Don't move cursor
+ */
+unsigned char *cbuf_peek(const cbuf_t * cb, const int size)
 {
-//    printf("%lx %d\n", cb->data, cb->start);
-//    printf("%lx %d %lx\n", cb->data, cb->start, cb->data + cb->start);
-    if (cb->start == cb->end)
+    void *end;
+
+    if (cbuf_is_empty(cb))
         return NULL;
+
     return cb->data + cb->start;
 }
 
-/**
- * Release this cursor of this size */
-void cbuf_poll_release(
-    cbuf_t * cb,
-    const int size
-)
+/** 
+ * Get pointer to data to read.
+ * Move the cursor on
+ *
+ * @return pointer to data, null if we can't poll this much data
+ */
+unsigned char *cbuf_poll(cbuf_t * cb, const int size)
 {
+    void *end;
+
+//    printf("%lx %d\n", cb->data, cb->start);
+//    printf("%lx %d %lx\n", cb->data, cb->start, cb->data + cb->start);
+    if (cbuf_is_empty(cb))
+        return NULL;
+
+    end = cb->data + cb->start;
     cb->start += size;
+    return end;
 }
 
-int cbuf_is_empty(
-    cbuf_t * cb
-)
-{
-    return cb->start == cb->end;
-}
-
-int cbuf_get_size(
-    cbuf_t * cb
-)
+int cbuf_get_size(const cbuf_t * cb)
 {
     return cb->size;
 }
