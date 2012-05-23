@@ -152,6 +152,7 @@ unsigned char *cbuf_peek(const cbuf_t * cb, const int size)
  * Move the cursor on
  *
  * @return pointer to data, null if we can't poll this much data
+<<<<<<< HEAD
  */
 unsigned char *cbuf_poll(cbuf_t * cb, const int size)
 {
