@@ -30,7 +30,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#if MMAP_AVAILABLE
 #include <sys/mman.h>
+#endif
 #include <unistd.h>
 #include "cbuffer.h"
 
@@ -49,17 +51,9 @@ int cbuf_get_unused_size(const cbuf_t * cb)
     }
 }
 
-/**
- * creat new circular buffer.
- * @param order to the power of two equals size*/
-cbuf_t *cbuf_new(const unsigned int order)
+#if MMAP_AVAILABLE
+static void __init_cbuf_mmap(cbuf_t* cb)
 {
-    cbuf_t *cb;
-
-    cb = malloc(sizeof(cbuf_t));
-    cb->size = 1UL << order;
-//    cb->data = malloc(cb->size);
-
     char path[] = "/dev/shm/ring-cb-XXXXXX";
 
     int fd, status;
@@ -73,10 +67,6 @@ cbuf_t *cbuf_new(const unsigned int order)
     status = unlink(path);
     if (status)
         fail();
-
-    cb->size = 1UL << order;
-    cb->start = 0;
-    cb->end = 0;
 
     status = ftruncate(fd, cb->size);
     if (status)
@@ -103,13 +93,36 @@ cbuf_t *cbuf_new(const unsigned int order)
     status = close(fd);
     if (status)
         fail();
+}
+#endif
+
+/**
+ * creat new circular buffer.
+ * @param order to the power of two equals size*/
+cbuf_t *cbuf_new(const unsigned int order)
+{
+    cbuf_t *cb;
+
+    cb = malloc(sizeof(cbuf_t));
+    cb->size = 1UL << order;
+    cb->start = 0;
+    cb->end = 0;
+//    cb->data = malloc(cb->size);
+
+#if MMAP_AVAILABLE
+    __init_cbuf_mmap(cb);
+#else
+    cb->data = malloc(cb->size);
+#endif
 
     return cb;
 }
 
 void cbuf_free(cbuf_t * cb)
 {
+#if MMAP_AVAILABLE
     munmap(cb->data, cb->size << 1);
+#endif
     free(cb);
 }
 
@@ -137,10 +150,8 @@ int cbuf_offer(cbuf_t * cb, const unsigned char *data, const int size)
  * Look at data.
  * Don't move cursor
  */
-unsigned char *cbuf_peek(const cbuf_t * cb, const int size)
+unsigned char *cbuf_peek(const cbuf_t * cb)//, const int size)
 {
-    void *end;
-
     if (cbuf_is_empty(cb))
         return NULL;
 
@@ -148,11 +159,9 @@ unsigned char *cbuf_peek(const cbuf_t * cb, const int size)
 }
 
 /** 
- * Get pointer to data to read.
- * Move the cursor on
+ * Get pointer to data to read. Move the cursor on.
  *
  * @return pointer to data, null if we can't poll this much data
-<<<<<<< HEAD
  */
 unsigned char *cbuf_poll(cbuf_t * cb, const int size)
 {
