@@ -46,7 +46,7 @@ echo \
     printf("%s\\n", output->buffer);
 }
 
-int main(int argc, char **argv)
+int main()
 {
     RunAllTests();
     return 0;

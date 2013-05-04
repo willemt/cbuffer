@@ -48,7 +48,7 @@ void TestCbuffer_is_not_empty_after_offer(CuTest * tc)
     cbuf_t *cb;
 
     cb = cbuf_new(16);
-    cbuf_offer(cb, "abcd", 4);
+    cbuf_offer(cb, (unsigned char*)"abcd", 4);
     CuAssertTrue(tc, !cbuf_is_empty(cb));
 }
 
@@ -57,7 +57,7 @@ void TestCbuffer_is_empty_after_poll_release(CuTest * tc)
     cbuf_t *cb;
 
     cb = cbuf_new(16);
-    cbuf_offer(cb, "abcd", 4);
+    cbuf_offer(cb, (unsigned char*)"abcd", 4);
     cbuf_poll(cb, 4);
     CuAssertTrue(tc, cbuf_is_empty(cb));
 }
@@ -68,7 +68,7 @@ void TxestCbuffer_cant_offer_if_full(CuTest * tc)
 
     cb = cbuf_new(0);
 
-    CuAssertTrue(tc, 0 == cbuf_offer(cb, "1000", 4));
+    CuAssertTrue(tc, 0 == cbuf_offer(cb, (unsigned char*)"1000", 4));
 }
 
 void TestCbuffer_offer_and_poll(CuTest * tc)
@@ -77,7 +77,7 @@ void TestCbuffer_offer_and_poll(CuTest * tc)
 
     cb = cbuf_new(16);
 
-    cbuf_offer(cb, "abcd", 4);
+    cbuf_offer(cb, (unsigned char*)"abcd", 4);
 //    CuAssertTrue(tc, 96 == cbuf_get_unused_size(cb));
     cbuf_peek(cb, 4);
     CuAssertTrue(tc, 0 == strncmp("abcd", cbuf_peek(cb, 4), 4));
@@ -98,7 +98,7 @@ void TestCbuffer_can_poll_twice_without_release(CuTest * tc)
 
     cb = cbuf_new(16);
 
-    cbuf_offer(cb, "1000", 4);
+    cbuf_offer(cb, (unsigned char*)"1000", 4);
     cbuf_peek(cb, 4);
     CuAssertTrue(tc, NULL != cbuf_peek(cb, 4));
 }
@@ -109,7 +109,7 @@ void TestCbuffer_cant_poll_twice_when_released(CuTest * tc)
 
     cb = cbuf_new(16);
 
-    cbuf_offer(cb, "1000", 4);
+    cbuf_offer(cb, (unsigned char*)"1000", 4);
     cbuf_peek(cb, 4);
     cbuf_poll(cb, 4);
     CuAssertTrue(tc, NULL == cbuf_peek(cb, 4));
@@ -121,8 +121,8 @@ void TxestCbuffer_get_unused_when_overlapping(CuTest * tc)
 
     cb = cbuf_new(16);
 
-    cbuf_offer(cb, "123", 3);
+    cbuf_offer(cb, (unsigned char*)"123", 3);
     cbuf_poll(cb, 2);
-    cbuf_offer(cb, "45", 2);
+    cbuf_offer(cb, (unsigned char*)"45", 2);
     CuAssertTrue(tc, 0 == strncmp("1000", cbuf_peek(cb, 4), 4));
 }

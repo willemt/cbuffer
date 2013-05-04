@@ -30,8 +30,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#if MMAP_AVAILABLE
+#if UNIX
 #include <sys/mman.h>
+#else
+#include <windows.h>
 #endif
 #include <unistd.h>
 #include "cbuffer.h"
@@ -51,13 +53,11 @@ int cbuf_get_unused_size(const cbuf_t * cb)
     }
 }
 
-#if MMAP_AVAILABLE
+#if UNIX
 static void __init_cbuf_mmap(cbuf_t* cb)
 {
     char path[] = "/dev/shm/ring-cb-XXXXXX";
-
     int fd, status;
-
     void *address;
 
     fd = mkstemp(path);
@@ -72,6 +72,7 @@ static void __init_cbuf_mmap(cbuf_t* cb)
     if (status)
         fail();
 
+    /* create the array of data */
     cb->data = mmap(NULL, cb->size << 1, PROT_NONE,
                     MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 
@@ -94,6 +95,66 @@ static void __init_cbuf_mmap(cbuf_t* cb)
     if (status)
         fail();
 }
+
+#else
+
+static void __init_cbuf_win32(cbuf_t* cb)
+{
+    UINT_PTR addr;
+    HANDLE hMapFile;
+    LPVOID address;//, address2;
+
+    /* create a mapping backed by a pagefile */
+    hMapFile = CreateFileMapping (    
+        INVALID_HANDLE_VALUE,
+        NULL,
+        PAGE_EXECUTE_READWRITE,
+        0,
+        1 << cb->size,
+        "Local\\mapping" );
+//    if(hMapFile == NULL) 
+//        FAIL(CreateFileMapping);
+
+    /* find a free bufferSize*2 address space */
+    cb->data = address = MapViewOfFile (    
+        hMapFile,
+        FILE_MAP_ALL_ACCESS,
+        0,                   
+        0,                   
+        1 << cb->size );
+
+//    if(address==NULL) 
+//        FAIL(MapViewOfFile);
+
+    UnmapViewOfFile(address);
+    /* found it. hopefully it'll remain free while we map to it */
+
+    addr = ((UINT_PTR)address);
+    address = MapViewOfFileEx (
+        hMapFile,
+        FILE_MAP_ALL_ACCESS,
+        0,                   
+        0,                   
+        cb->size, 
+        (LPVOID)addr );
+
+    addr = ((UINT_PTR)address) + cb->size;        
+    //address2 = MapViewOfFileEx (
+    MapViewOfFileEx (
+        hMapFile,
+        FILE_MAP_ALL_ACCESS,
+        0,                   
+        0,                   
+        cb->size,
+        (LPVOID)addr);  
+
+//    if(address2==NULL)      
+//        FAIL(MapViewOfFileEx);
+
+// when you're done with your ring buffer, call UnmapViewOfFile for 
+// address and address2 and CloseHandle(hMapFile)
+}
+
 #endif
 
 /**
@@ -109,10 +170,11 @@ cbuf_t *cbuf_new(const unsigned int order)
     cb->end = 0;
 //    cb->data = malloc(cb->size);
 
-#if MMAP_AVAILABLE
+#if UNIX
     __init_cbuf_mmap(cb);
 #else
-    cb->data = malloc(cb->size);
+    __init_cbuf_win32(cb);
+//    cb->data = malloc(cb->size);
 #endif
 
     return cb;
@@ -120,8 +182,11 @@ cbuf_t *cbuf_new(const unsigned int order)
 
 void cbuf_free(cbuf_t * cb)
 {
-#if MMAP_AVAILABLE
+#if UNIX
     munmap(cb->data, cb->size << 1);
+#else
+
+
 #endif
     free(cb);
 }

@@ -21,3 +21,5 @@ void cbuf_poll_release(cbuf_t * cb, const int size);
 int cbuf_get_size(const cbuf_t * cb);
 
 void cbuf_free(cbuf_t * cb);
+
+int cbuf_is_empty(const cbuf_t * cb);
