@@ -27,6 +27,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 */
 
+#include "stdio.h"
+
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -40,16 +42,28 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define fail() assert(0)
 
-
-int cbuf_get_unused_size(const cbuf_t * cb)
+typedef struct
 {
-    if (cb->end < cb->start)
+    unsigned long int size;
+    int start, end;
+    void *data;
+#if UNIX
+#else
+    HANDLE hMapFile;
+#endif
+} cbuf_t;
+
+int cbuf_get_unused_size(const void * cb)
+{
+    const cbuf_t *me = cb;
+
+    if (me->end < me->start)
     {
-        return cb->start - cb->end;
+        return me->start - me->end;
     }
     else
     {
-        return cb->size - (cb->start - cb->end);
+        return me->size - (me->start - me->end);
     }
 }
 
@@ -101,58 +115,60 @@ static void __init_cbuf_mmap(cbuf_t* cb)
 static void __init_cbuf_win32(cbuf_t* cb)
 {
     UINT_PTR addr;
-    HANDLE hMapFile;
-    LPVOID address;//, address2;
+    LPVOID address, address2;
+    unsigned long int size;
+
+    SYSTEM_INFO si;
+    GetSystemInfo(&si);
+    //printf("%d\n", (int)si.dwAllocationGranularity);
+
+    size = si.dwAllocationGranularity;
+
+//    printf("%ld\n", size * 2);
 
     /* create a mapping backed by a pagefile */
-    hMapFile = CreateFileMapping (    
+    cb->hMapFile = CreateFileMapping (    
         INVALID_HANDLE_VALUE,
         NULL,
-        PAGE_EXECUTE_READWRITE,
+        PAGE_READWRITE,
         0,
-        1 << cb->size,
-        "Local\\mapping" );
-//    if(hMapFile == NULL) 
-//        FAIL(CreateFileMapping);
+        size * 2,
+        "Mapping");
+    assert(cb->hMapFile != NULL);
 
     /* find a free bufferSize*2 address space */
     cb->data = address = MapViewOfFile (    
-        hMapFile,
+        cb->hMapFile,
         FILE_MAP_ALL_ACCESS,
         0,                   
         0,                   
-        1 << cb->size );
-
-//    if(address==NULL) 
-//        FAIL(MapViewOfFile);
-
+        size * 2);
+    assert(address != NULL);
     UnmapViewOfFile(address);
-    /* found it. hopefully it'll remain free while we map to it */
 
+    /* found it. hopefully it'll remain free while we map to it */
     addr = ((UINT_PTR)address);
     address = MapViewOfFileEx (
-        hMapFile,
+        cb->hMapFile,
         FILE_MAP_ALL_ACCESS,
         0,                   
         0,                   
         cb->size, 
         (LPVOID)addr );
+    assert(address != NULL);
 
-    addr = ((UINT_PTR)address) + cb->size;        
-    //address2 = MapViewOfFileEx (
-    MapViewOfFileEx (
-        hMapFile,
+//    ErrorExit(TEXT("GetProcessId"));
+
+    addr = ((UINT_PTR)address) + size;        
+    address2 = MapViewOfFileEx (
+        cb->hMapFile,
         FILE_MAP_ALL_ACCESS,
         0,                   
         0,                   
-        cb->size,
+        size,
         (LPVOID)addr);  
 
-//    if(address2==NULL)      
-//        FAIL(MapViewOfFileEx);
-
-// when you're done with your ring buffer, call UnmapViewOfFile for 
-// address and address2 and CloseHandle(hMapFile)
+    assert(address2 != NULL);
 }
 
 #endif
@@ -160,54 +176,59 @@ static void __init_cbuf_win32(cbuf_t* cb)
 /**
  * creat new circular buffer.
  * @param order to the power of two equals size*/
-cbuf_t *cbuf_new(const unsigned int order)
+void *cbuf_new(const unsigned int order)
 {
-    cbuf_t *cb;
+    cbuf_t *me;
 
-    cb = malloc(sizeof(cbuf_t));
-    cb->size = 1UL << order;
-    cb->start = 0;
-    cb->end = 0;
-//    cb->data = malloc(cb->size);
+    me = malloc(sizeof(cbuf_t));
+    me->size = 1UL << order;
+    me->start = 0;
+    me->end = 0;
+//    me->data = malloc(me->size);
 
 #if UNIX
-    __init_cbuf_mmap(cb);
+    __init_cbuf_mmap(me);
 #else
-    __init_cbuf_win32(cb);
-//    cb->data = malloc(cb->size);
+    __init_cbuf_win32(me);
+//    me->data = malloc(me->size);
 #endif
 
-    return cb;
+    return me;
 }
 
-void cbuf_free(cbuf_t * cb)
+void cbuf_free(void * cb)
 {
+    cbuf_t *me = cb;
+
 #if UNIX
-    munmap(cb->data, cb->size << 1);
+    munmap(me->data, me->size << 1);
 #else
-
-
+    UnmapViewOfFile(me->data);
+    UnmapViewOfFile(me->data + me->size * 2);
+    CloseHandle(me->hMapFile);
 #endif
-    free(cb);
+    free(me);
 }
 
-int cbuf_is_empty(const cbuf_t * cb)
+int cbuf_is_empty(const void * cb)
 {
-    return cb->start == cb->end;
+    const cbuf_t *me = cb;
+    return me->start == me->end;
 }
 
 /**
  * @return number of bytes offered
  * */
-int cbuf_offer(cbuf_t * cb, const unsigned char *data, const int size)
+int cbuf_offer(void * cb, const unsigned char *data, const int size)
 {
+    cbuf_t *me = cb;
     int written;
 
     written = cbuf_get_unused_size(cb);
     written = size < written ? size : written;
-    memcpy(cb->data + cb->end, data, written);
-    cb->end += written;
-    cb->end %= cb->size;
+    memcpy(me->data + me->end, data, written);
+    me->end += written;
+    me->end %= me->size;
     return written;
 }
 
@@ -215,12 +236,14 @@ int cbuf_offer(cbuf_t * cb, const unsigned char *data, const int size)
  * Look at data.
  * Don't move cursor
  */
-unsigned char *cbuf_peek(const cbuf_t * cb)//, const int size)
+unsigned char *cbuf_peek(const void * cb)//, const int size)
 {
+    const cbuf_t *me = cb;
+
     if (cbuf_is_empty(cb))
         return NULL;
 
-    return cb->data + cb->start;
+    return me->data + me->start;
 }
 
 /** 
@@ -228,21 +251,23 @@ unsigned char *cbuf_peek(const cbuf_t * cb)//, const int size)
  *
  * @return pointer to data, null if we can't poll this much data
  */
-unsigned char *cbuf_poll(cbuf_t * cb, const int size)
+unsigned char *cbuf_poll(void * cb, const unsigned int size)
 {
+    cbuf_t *me = cb;
     void *end;
 
-//    printf("%lx %d\n", cb->data, cb->start);
-//    printf("%lx %d %lx\n", cb->data, cb->start, cb->data + cb->start);
+//    printf("%lx %d\n", me->data, me->start);
+//    printf("%lx %d %lx\n", me->data, me->start, me->data + me->start);
     if (cbuf_is_empty(cb))
         return NULL;
 
-    end = cb->data + cb->start;
-    cb->start += size;
+    end = me->data + me->start;
+    me->start += size;
     return end;
 }
 
-int cbuf_get_size(const cbuf_t * cb)
+int cbuf_get_size(const void * cb)
 {
-    return cb->size;
+    const cbuf_t *me = cb;
+    return me->size;
 }
