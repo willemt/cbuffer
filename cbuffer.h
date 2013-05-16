@@ -17,3 +17,5 @@ int cbuf_get_size(const void * cb);
 void cbuf_free(void * cb);
 
 int cbuf_is_empty(const void * cb);
+
+int cbuf_get_spaceused(const void* cb);

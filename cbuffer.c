@@ -271,3 +271,11 @@ int cbuf_get_size(const void * cb)
     const cbuf_t *me = cb;
     return me->size;
 }
+
+/**
+ * @return tell us how much space we have assigned */
+int cbuf_get_spaceused(const void* cb)
+{
+    const cbuf_t *me = cb;
+    return me->end - me->start;
+}
