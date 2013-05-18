@@ -42,6 +42,17 @@ void TestCbuffer_is_empty_after_poll_release(CuTest * tc)
     CuAssertTrue(tc, cbuf_is_empty(cb));
 }
 
+void TestCbuffer_spaceused_is_zero_after_poll_release(CuTest * tc)
+{
+    void *cb;
+
+    cb = cbuf_new(16);
+    cbuf_offer(cb, (unsigned char*)"abcd", 4);
+    CuAssertTrue(tc, 4 == cbuf_get_spaceused(cb));
+    cbuf_poll(cb, 4);
+    CuAssertTrue(tc, 0 == cbuf_get_spaceused(cb));
+}
+
 void TxestCbuffer_cant_offer_if_full(CuTest * tc)
 {
     void *cb;
