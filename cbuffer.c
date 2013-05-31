@@ -32,7 +32,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#if __WINDOWS__
+#if WIN32
 #include <windows.h>
 #else
 #include <sys/mman.h>
@@ -47,7 +47,7 @@ typedef struct
     unsigned long int size;
     int start, end;
     void *data;
-#if __WINDOWS__
+#if WIN32
     HANDLE hMapFile;
 #endif
 } cbuf_t;
@@ -66,7 +66,7 @@ int cbuf_get_unused_size(const void * cb)
     }
 }
 
-#if __WINDOWS__
+#if WIN32
 
 static void __init_cbuf_win32(cbuf_t* cb)
 {
@@ -187,7 +187,7 @@ void *cbuf_new(const unsigned int order)
 //    me->data = malloc(me->size);
 //    me->data = malloc(me->size);
 
-#if __WINDOWS__
+#if WIN32
     __init_cbuf_win32(me);
 #else
     __init_cbuf_mmap(me);
@@ -200,7 +200,7 @@ void cbuf_free(void * cb)
 {
     cbuf_t *me = cb;
 
-#if __WINDOWS__
+#if WIN32
     UnmapViewOfFile(me->data);
     UnmapViewOfFile(me->data + me->size * 2);
     CloseHandle(me->hMapFile);
