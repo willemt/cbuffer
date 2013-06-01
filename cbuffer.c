@@ -112,6 +112,7 @@ static void __init_cbuf_mmap(cbuf_t* cb)
 
 #else
 
+#if 0
 static void __init_cbuf_win32(cbuf_t* cb)
 {
     UINT_PTR addr;
@@ -137,7 +138,7 @@ static void __init_cbuf_win32(cbuf_t* cb)
     assert(cb->hMapFile != NULL);
 
     /* find a free bufferSize*2 address space */
-    cb->data = address = MapViewOfFile (    
+     address = MapViewOfFile (    
         cb->hMapFile,
         FILE_MAP_ALL_ACCESS,
         0,                   
@@ -148,7 +149,7 @@ static void __init_cbuf_win32(cbuf_t* cb)
 
     /* found it. hopefully it'll remain free while we map to it */
     addr = ((UINT_PTR)address);
-    address = MapViewOfFileEx (
+    cb->data = address = MapViewOfFileEx (
         cb->hMapFile,
         FILE_MAP_ALL_ACCESS,
         0,                   
@@ -167,9 +168,9 @@ static void __init_cbuf_win32(cbuf_t* cb)
         0,                   
         size,
         (LPVOID)addr);  
-
     assert(address2 != NULL);
 }
+#endif
 
 #endif
 

@@ -107,6 +107,36 @@ void TestCbuffer_cant_poll_twice_when_released(CuTest * tc)
     CuAssertTrue(tc, NULL == cbuf_poll(cb, 4));
 }
 
+void TestCbuffer_cbuffers_independant_of_each_other(CuTest * tc)
+{
+    void *cb, *cb2;
+
+    cb = cbuf_new(16);
+    cb2 = cbuf_new(16);
+
+    cbuf_offer(cb, (unsigned char*)"abcd", 4);
+    printf("%.*s\n", 4, (char*)cbuf_peek(cb));
+    cbuf_offer(cb2, (unsigned char*)"efgh", 4);
+    printf("%.*s\n", 4, (char*)cbuf_peek(cb));
+    CuAssertTrue(tc, 0 == strncmp("abcd", (char*)cbuf_poll(cb, 4), 4));
+    CuAssertTrue(tc, 0 == strncmp("efgh", (char*)cbuf_poll(cb2, 4), 4));
+}
+
+void TestCbuffer_cbuffers_independant_of_each_other_with_no_polling(CuTest * tc)
+{
+    void *cb, *cb2;
+
+    cb = cbuf_new(16);
+    cb2 = cbuf_new(16);
+
+    cbuf_offer(cb, (unsigned char*)"abcd", 4);
+    cbuf_offer(cb2, (unsigned char*)"efgh", 4);
+    CuAssertTrue(tc, 0 == strncmp("abcd", (char*)cbuf_peek(cb), 4));
+    CuAssertTrue(tc, 0 == strncmp("efgh", (char*)cbuf_peek(cb2), 4));
+}
+
+
+
 #if 0
 void TxestCbuffer_get_unused_when_overlapping(CuTest * tc)
 {
