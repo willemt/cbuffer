@@ -32,10 +32,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#if UNIX
-#include <sys/mman.h>
-#else
+#if WIN32
 #include <windows.h>
+#else
+#include <sys/mman.h>
 #endif
 #include <unistd.h>
 #include "cbuffer.h"
@@ -47,8 +47,7 @@ typedef struct
     unsigned long int size;
     int start, end;
     void *data;
-#if UNIX
-#else
+#if WIN32
     HANDLE hMapFile;
 #endif
 } cbuf_t;
@@ -67,50 +66,7 @@ int cbuf_get_unused_size(const void * cb)
     }
 }
 
-#if UNIX
-static void __init_cbuf_mmap(cbuf_t* cb)
-{
-    char path[] = "/dev/shm/ring-cb-XXXXXX";
-    int fd, status;
-    void *address;
-
-    fd = mkstemp(path);
-    if (fd < 0)
-        fail();
-
-    status = unlink(path);
-    if (status)
-        fail();
-
-    status = ftruncate(fd, cb->size);
-    if (status)
-        fail();
-
-    /* create the array of data */
-    cb->data = mmap(NULL, cb->size << 1, PROT_NONE,
-                    MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
-
-    if (cb->data == MAP_FAILED)
-        fail();
-
-    address = mmap(cb->data, cb->size, PROT_READ | PROT_WRITE,
-                   MAP_FIXED | MAP_SHARED, fd, 0);
-
-    if (address != cb->data)
-        fail();
-
-    address = mmap(cb->data + cb->size, cb->size, PROT_READ | PROT_WRITE,
-                   MAP_FIXED | MAP_SHARED, fd, 0);
-
-    if (address != cb->data + cb->size)
-        fail();
-
-    status = close(fd);
-    if (status)
-        fail();
-}
-
-#else
+#if WIN32
 
 #if 0
 static void __init_cbuf_win32(cbuf_t* cb)
@@ -170,7 +126,49 @@ static void __init_cbuf_win32(cbuf_t* cb)
         (LPVOID)addr);  
     assert(address2 != NULL);
 }
-#endif
+#else
+
+static void __init_cbuf_mmap(cbuf_t* cb)
+{
+    char path[] = "/dev/shm/ring-cb-XXXXXX";
+    int fd, status;
+    void *address;
+
+    fd = mkstemp(path);
+    if (fd < 0)
+        fail();
+
+    status = unlink(path);
+    if (status)
+        fail();
+
+    status = ftruncate(fd, cb->size);
+    if (status)
+        fail();
+
+    /* create the array of data */
+    cb->data = mmap(NULL, cb->size << 1, PROT_NONE,
+                    MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+
+    if (cb->data == MAP_FAILED)
+        fail();
+
+    address = mmap(cb->data, cb->size, PROT_READ | PROT_WRITE,
+                   MAP_FIXED | MAP_SHARED, fd, 0);
+
+    if (address != cb->data)
+        fail();
+
+    address = mmap(cb->data + cb->size, cb->size, PROT_READ | PROT_WRITE,
+                   MAP_FIXED | MAP_SHARED, fd, 0);
+
+    if (address != cb->data + cb->size)
+        fail();
+
+    status = close(fd);
+    if (status)
+        fail();
+}
 
 #endif
 
@@ -186,12 +184,12 @@ void *cbuf_new(const unsigned int order)
     me->start = 0;
     me->end = 0;
 //    me->data = malloc(me->size);
-
-#if UNIX
-    __init_cbuf_mmap(me);
-#else
-    __init_cbuf_win32(me);
 //    me->data = malloc(me->size);
+
+#if WIN32
+    __init_cbuf_win32(me);
+#else
+    __init_cbuf_mmap(me);
 #endif
 
     return me;
@@ -201,12 +199,12 @@ void cbuf_free(void * cb)
 {
     cbuf_t *me = cb;
 
-#if UNIX
-    munmap(me->data, me->size << 1);
-#else
+#if WIN32
     UnmapViewOfFile(me->data);
     UnmapViewOfFile(me->data + me->size * 2);
     CloseHandle(me->hMapFile);
+#else
+    munmap(me->data, me->size << 1);
 #endif
     free(me);
 }
