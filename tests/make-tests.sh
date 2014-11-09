@@ -6,7 +6,7 @@
 # Author: Asim Jalis
 # Date: 01/08/2003
 
-FILES=*.c
+FILES=$1
 
 #if test $# -eq 0 ; then FILES=*.c ; else FILES=$* ; fi
 
