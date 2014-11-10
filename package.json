@@ -1,0 +1,9 @@
+{
+  "name": "circular buffer",
+  "version": "0.0.1",
+  "repo": "willemt/cbuffer",
+  "description": "Circular buffer using mmap",
+  "keywords": ["buffer", "ring buffer", "circular buffer"],
+  "license": "BSD",
+  "src": ["cbuffer.c", "cbuffer.h"]
+}
