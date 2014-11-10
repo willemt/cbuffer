@@ -4,11 +4,11 @@ This circular buffer uses a mmap magic trick to make the caller's life easier.
 
 mmap is used to mirror the buffer like below:
 
-.. image:: http://github.com/willemt/cbuffer/raw/master/doc/circular_buffer_mmap.png
+.. figure:: doc/circular_buffer_mmap.png
 
 The "mirrored" buffer is then placed beside the buffer. When the user polls the item it doesn't matter if the item crosses the buffer's boundary:
 
-.. image:: http://github.com/willemt/cbuffer/raw/master/doc/circular_buffer_mmap_portal.png
+.. figure:: doc/circular_buffer_mmap_portal.png
 
 Compatibility
 -------------
