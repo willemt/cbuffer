@@ -1,21 +1,45 @@
+#ifndef CBUFFER_H
+#define CBUFFER_H
 
+typedef struct
+{
+    unsigned long int size;
+    int start, end;
+    void *data;
+} cbuf_t;
 
-void *cbuf_new(const unsigned int order);
+/**
+ * creat new circular buffer.
+ * @param order to the power of two equals size*/
+cbuf_t *cbuf_new(const unsigned int order);
 
-int cbuf_offer(void * cb, const unsigned char *data, const int size);
+void cbuf_free(cbuf_t* cb);
 
-int cbuf_get_unused_size(const void * cb);
+/**
+ * @return number of bytes offered */
+int cbuf_offer(cbuf_t* cb, const unsigned char *data, const int size);
 
-unsigned char *cbuf_peek(const void * cb);
+int cbuf_unusedspaced(const cbuf_t* cb);
 
-unsigned char *cbuf_poll(void * cb, const unsigned int size);
+/**
+ * Look at data.
+ * Don't move cursor */
+unsigned char *cbuf_peek(const cbuf_t* cb);
 
-void cbuf_poll_release(void * cb, const int size);
+/**
+ * Get pointer to data to read. Move the cursor on.
+ *
+ * @return pointer to data, null if we can't poll this much data */
+unsigned char *cbuf_poll(cbuf_t *cb, const unsigned int size);
 
-int cbuf_get_size(const void * cb);
+void cbuf_poll_release(cbuf_t* cb, const int size);
 
-void cbuf_free(void * cb);
+int cbuf_size(const cbuf_t* cb);
 
-int cbuf_is_empty(const void * cb);
+int cbuf_is_empty(const cbuf_t* cb);
 
-int cbuf_get_spaceused(const void* cb);
+/**
+ * @return tell us how much space we have assigned */
+int cbuf_usedspace(const cbuf_t* cb);
+
+#endif /* CBUFFER_H */

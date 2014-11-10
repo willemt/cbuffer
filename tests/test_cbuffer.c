@@ -12,7 +12,7 @@ void TestCbuffer_set_size_with_init(CuTest * tc)
     void *cb;
 
     cb = cbuf_new(16);
-    CuAssertTrue(tc, 1UL << 16 == cbuf_get_size(cb));
+    CuAssertTrue(tc, 1UL << 16 == cbuf_size(cb));
 }
 
 void TestCbuffer_is_empty_after_init(CuTest * tc)
@@ -48,9 +48,9 @@ void TestCbuffer_spaceused_is_zero_after_poll_release(CuTest * tc)
 
     cb = cbuf_new(16);
     cbuf_offer(cb, (unsigned char*)"abcd", 4);
-    CuAssertTrue(tc, 4 == cbuf_get_spaceused(cb));
+    CuAssertTrue(tc, 4 == cbuf_usedspace(cb));
     cbuf_poll(cb, 4);
-    CuAssertTrue(tc, 0 == cbuf_get_spaceused(cb));
+    CuAssertTrue(tc, 0 == cbuf_usedspace(cb));
 }
 
 void TxestCbuffer_cant_offer_if_full(CuTest * tc)
@@ -115,9 +115,7 @@ void TestCbuffer_cbuffers_independant_of_each_other(CuTest * tc)
     cb2 = cbuf_new(16);
 
     cbuf_offer(cb, (unsigned char*)"abcd", 4);
-    printf("%.*s\n", 4, (char*)cbuf_peek(cb));
     cbuf_offer(cb2, (unsigned char*)"efgh", 4);
-    printf("%.*s\n", 4, (char*)cbuf_peek(cb));
     CuAssertTrue(tc, 0 == strncmp("abcd", (char*)cbuf_poll(cb, 4), 4));
     CuAssertTrue(tc, 0 == strncmp("efgh", (char*)cbuf_poll(cb2, 4), 4));
 }

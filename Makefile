@@ -1,7 +1,7 @@
 GCOV_OUTPUT = *.gcda *.gcno *.gcov 
 GCOV_CCFLAGS = -fprofile-arcs -ftest-coverage
 CC     = gcc
-CCFLAGS = -g -O2 -Wall -Werror -W -fno-omit-frame-pointer -fno-common -fsigned-char $(GCOV_CCFLAGS)
+CCFLAGS = -I. -Itests -g -O2 -Wall -Werror -W -fno-omit-frame-pointer -fno-common -fsigned-char $(GCOV_CCFLAGS)
 
 ifeq ($(OS),Windows_NT)
     CCFLAGS += -D WIN32
@@ -32,18 +32,17 @@ else
 endif
 
 
-all: tests
+all: test
 
 main.c:
-	sh make-tests.sh > main.c
+	sh tests/make-tests.sh tests/test_*.c > main.c
 
-tests: main.c cbuffer.o test_cbuffer.c CuTest.c main.c
+test: main.c cbuffer.o tests/test_cbuffer.c tests/CuTest.c main.c
 	$(CC) $(CCFLAGS) -o $@ $^
-	./tests
-	gcov main.c test_heap.c heap.c
+	./test
 
 cbuffer.o: cbuffer.c
 	$(CC) $(CCFLAGS) -c -o $@ $^
 
 clean:
-	rm -f main.c cbuffer.o tests $(GCOV_OUTPUT)
+	rm -f main.c cbuffer.o test $(GCOV_OUTPUT)

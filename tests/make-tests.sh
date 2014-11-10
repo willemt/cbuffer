@@ -41,7 +41,6 @@ cat $FILES | grep '^void Test' |
 echo \
 '
     CuSuiteRun(suite);
-    CuSuiteSummary(suite, output);
     CuSuiteDetails(suite, output);
     printf("%s\\n", output->buffer);
 }
