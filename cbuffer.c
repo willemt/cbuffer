@@ -15,13 +15,9 @@
 
 #define fail() assert(0)
 
-int cbuf_unusedspace(const cbuf_t *me)
-{
-    if (me->end < me->start)
-        return me->start - me->end;
-    else
-        return me->size - (me->start - me->end);
-}
+#ifndef MAP_ANONYMOUS
+#  define MAP_ANONYMOUS MAP_ANON
+#endif
 
 static void __init_cbuf_mmap(cbuf_t* cb)
 {
@@ -42,8 +38,8 @@ static void __init_cbuf_mmap(cbuf_t* cb)
         fail();
 
     /* create the array of data */
-    cb->data = mmap(NULL, cb->size << 1, PROT_NONE, MAP_ANON | MAP_PRIVATE, -1,
-                    0);
+    cb->data = mmap(NULL, cb->size << 1, PROT_NONE, MAP_ANONYMOUS | MAP_PRIVATE,
+                    -1, 0);
     if (cb->data == MAP_FAILED)
         fail();
 
@@ -66,8 +62,7 @@ cbuf_t *cbuf_new(const unsigned int order)
 {
     cbuf_t *me = malloc(sizeof(cbuf_t));
     me->size = 1UL << order;
-    me->start = 0;
-    me->end = 0;
+    me->head = me->tail = 0;
     __init_cbuf_mmap(me);
     return me;
 }
@@ -80,16 +75,17 @@ void cbuf_free(cbuf_t *me)
 
 int cbuf_is_empty(const cbuf_t *me)
 {
-    return me->start == me->end;
+    return me->head == me->tail;
 }
 
 int cbuf_offer(cbuf_t *me, const unsigned char *data, const int size)
 {
     int written = cbuf_unusedspace(me);
     written = size < written ? size : written;
-    memcpy(me->data + me->end, data, written);
-    me->end += written;
-    me->end %= me->size;
+    memcpy(me->data + me->tail, data, written);
+    me->tail += written;
+    if (me->size < me->tail)
+        me->tail %= me->size;
     return written;
 }
 
@@ -98,7 +94,7 @@ unsigned char *cbuf_peek(const cbuf_t *me)
     if (cbuf_is_empty(me))
         return NULL;
 
-    return me->data + me->start;
+    return me->data + me->head;
 }
 
 unsigned char *cbuf_poll(cbuf_t *me, const unsigned int size)
@@ -106,8 +102,8 @@ unsigned char *cbuf_poll(cbuf_t *me, const unsigned int size)
     if (cbuf_is_empty(me))
         return NULL;
 
-    void *end = me->data + me->start;
-    me->start += size;
+    void *end = me->data + me->head;
+    me->head += size;
     return end;
 }
 
@@ -118,5 +114,13 @@ int cbuf_size(const cbuf_t *me)
 
 int cbuf_usedspace(const cbuf_t *me)
 {
-    return me->end - me->start;
+    if (me->head <= me->tail)
+        return me->tail - me->head;
+    else
+        return me->size - (me->head - me->tail);
+}
+
+int cbuf_unusedspace(const cbuf_t *me)
+{
+    return me->size - cbuf_usedspace(me);
 }

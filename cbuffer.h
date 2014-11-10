@@ -4,7 +4,7 @@
 typedef struct
 {
     unsigned long int size;
-    int start, end;
+    unsigned int head, tail;
     void *data;
 } cbuf_t;
 
@@ -19,7 +19,13 @@ void cbuf_free(cbuf_t* cb);
  * @return number of bytes offered */
 int cbuf_offer(cbuf_t* cb, const unsigned char *data, const int size);
 
-int cbuf_unusedspaced(const cbuf_t* cb);
+/**
+ * @return tell us how much space we have assigned */
+int cbuf_usedspace(const cbuf_t* cb);
+
+/**
+ * @return tell us how much space we can assign */
+int cbuf_unusedspace(const cbuf_t* cb);
 
 /**
  * Look at data.
@@ -37,9 +43,5 @@ void cbuf_poll_release(cbuf_t* cb, const int size);
 int cbuf_size(const cbuf_t* cb);
 
 int cbuf_is_empty(const cbuf_t* cb);
-
-/**
- * @return tell us how much space we have assigned */
-int cbuf_usedspace(const cbuf_t* cb);
 
 #endif /* CBUFFER_H */
