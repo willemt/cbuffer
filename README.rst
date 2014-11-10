@@ -2,11 +2,12 @@ Circular buffer's are tricky because the caller needs to know if the polled item
 
 This circular buffer uses a mmap magic trick to make the caller's life easier.
 
-mmap is used to mirror the buffer like below:
+1. mmap is used to mirror the buffer like below:
 
 .. figure:: doc/circular_buffer_mmap.png
 
-The "mirrored" buffer is then placed beside the buffer. When the user polls the item it doesn't matter if the item crosses the buffer's boundary:
+
+2. the "mirrored" buffer is then placed beside the buffer. When the user polls the item it doesn't matter if the item crosses the buffer's boundary:
 
 .. figure:: doc/circular_buffer_mmap_portal.png
 
