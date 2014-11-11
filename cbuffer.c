@@ -80,6 +80,9 @@ int cbuf_is_empty(const cbuf_t *me)
 
 int cbuf_offer(cbuf_t *me, const unsigned char *data, const int size)
 {
+    if (cbuf_unusedspace(me) < size)
+        return 0;
+
     int written = cbuf_unusedspace(me);
     written = size < written ? size : written;
     memcpy(me->data + me->tail, data, written);

@@ -53,13 +53,13 @@ void TestCbuffer_spaceused_is_zero_after_poll_release(CuTest * tc)
     CuAssertTrue(tc, 0 == cbuf_usedspace(cb));
 }
 
-void TxestCbuffer_cant_offer_if_full(CuTest * tc)
+void TestCbuffer_cant_offer_if_not_enough_space_full(CuTest * tc)
 {
     void *cb;
 
-    cb = cbuf_new(0);
+    cb = cbuf_new(16);
 
-    CuAssertTrue(tc, 0 == cbuf_offer(cb, (unsigned char*)"1000", 4));
+    CuAssertTrue(tc, 0 == cbuf_offer(cb, (unsigned char*)"1000", 1 << 17));
 }
 
 void TestCbuffer_offer_and_poll(CuTest * tc)
