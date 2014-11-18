@@ -133,8 +133,6 @@ void TestCbuffer_cbuffers_independant_of_each_other_with_no_polling(CuTest * tc)
     CuAssertTrue(tc, 0 == strncmp("efgh", (char*)cbuf_peek(cb2), 4));
 }
 
-
-
 #if 0
 void TxestCbuffer_get_unused_when_overlapping(CuTest * tc)
 {

@@ -19,7 +19,7 @@
 #  define MAP_ANONYMOUS MAP_ANON
 #endif
 
-static void __init_cbuf_mmap(cbuf_t* cb)
+static void __create_buffer_mirror(cbuf_t* cb)
 {
     char path[] = "/tmp/cb-XXXXXX";
     int fd, status;
@@ -63,7 +63,7 @@ cbuf_t *cbuf_new(const unsigned int order)
     cbuf_t *me = malloc(sizeof(cbuf_t));
     me->size = 1UL << order;
     me->head = me->tail = 0;
-    __init_cbuf_mmap(me);
+    __create_buffer_mirror(me);
     return me;
 }
 
