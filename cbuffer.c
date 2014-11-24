@@ -15,6 +15,7 @@
 
 #define fail() assert(0)
 
+/** OSX needs some help here */
 #ifndef MAP_ANONYMOUS
 #  define MAP_ANONYMOUS MAP_ANON
 #endif
@@ -80,7 +81,8 @@ int cbuf_is_empty(const cbuf_t *me)
 
 int cbuf_offer(cbuf_t *me, const unsigned char *data, const int size)
 {
-    if (cbuf_unusedspace(me) < size)
+    /* prevent buffer from getting completely full or over commited */
+    if (cbuf_unusedspace(me) <= size)
         return 0;
 
     int written = cbuf_unusedspace(me);
