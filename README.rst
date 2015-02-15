@@ -1,6 +1,8 @@
-Circular buffer's are tricky because the caller needs to know if the polled item crosses the maximum size of the underlying array.
+Circular buffers are tricky. The caller needs to know if the polled item crosses the maximum size of the underlying array.
 
-This circular buffer uses a mmap magic trick to make the caller's life easier.
+This circular buffer uses a *mmap magic trick* to make the caller's life easier.
+
+**This is how we do it:**
 
 1. mmap is used to mirror the buffer like below:
 
