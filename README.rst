@@ -17,4 +17,4 @@ Compatibility
 -------------
 This only works on UNIX systems.
 
-Windows support existed in d10238600a82de32fe1cb01bec8667d3a67e382c but was removed. This is because Windows doesn't actually have mmap and trying to get the same behaviour is painful.
+Windows support existed in d10238600a82de32fe1cb01bec8667d3a67e382c but was removed. This is because Windows doesn't actually have mmap and trying to get the same behaviour is painful. Maybe you should check this out instead: https://github.com/willemt/bipbuffer
