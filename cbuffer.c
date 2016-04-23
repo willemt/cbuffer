@@ -109,6 +109,8 @@ unsigned char *cbuf_poll(cbuf_t *me, const unsigned int size)
 
     void *end = me->data + me->head;
     me->head += size;
+    if (me->head >= me->size)
+        me->head -= me->size;
     return end;
 }
 
