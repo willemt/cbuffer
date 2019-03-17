@@ -61,7 +61,7 @@ void TestCbuffer_offer_and_poll(CuTest * tc)
 {
     void *cb = cbuf_new(16);
     cbuf_offer(cb, (unsigned char*)"abcd", 4);
-//    CuAssertTrue(tc, 96 == cbuf_get_unused_size(cb));
+    CuAssertTrue(tc, 65532 == cbuf_unusedspace(cb));
     CuAssertTrue(tc, 0 == strncmp("abcd", (char*)cbuf_poll(cb, 4), 4));
 }
 
