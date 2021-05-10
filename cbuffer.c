@@ -88,9 +88,10 @@ int cbuf_offer(cbuf_t *me, const unsigned char *data, const int size)
     int written = cbuf_unusedspace(me);
     written = size < written ? size : written;
     memcpy(me->data + me->tail, data, written);
-    me->tail += written;
-    if (me->size < me->tail)
-        me->tail %= me->size;
+    unsigned int new_tail = me->tail + written;
+    if (me->size < new_tail)
+        new_tail %= me->size;
+    me->tail = new_tail;
     return written;
 }
 
